@@ -1,7 +1,15 @@
 # TODO (under progress)-> Make OOP based code. 
 ## Store all images in a folder in 'path' variable
-## Step 1 : call get_image_inputs(path) 
+# Tackles the following issues : 1) Cell contours
+#								 2) Clump split
+#								 3) Cluster the layers on basis of contour area
 
+
+########################################################################################################################################						
+
+						####     NISSL CELL SEGMENTATION ALGORITHM     ####
+
+########################################################################################################################################						
 
 ## Dependencies
 
@@ -67,6 +75,13 @@ def getDict(contours, values):
 		mapping[tuple(cnt.ravel())] = values[i]
 		
 	return mapping
+
+
+#Step 1: Image Pre-processing
+#* Convert the image to grayscale.    
+#* Bitwise NOT operation is performed on Image: Inversion of input array elements. This improves contrast in the image.
+#* Threshold the image using OTSU Thresholding
+#(this will make the image with background white and objects black).
 
 def contraster(img_file):
   #-----Reading the image-----------------------------------------------------
