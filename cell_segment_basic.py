@@ -13,6 +13,7 @@
 
 ## Dependencies
 
+import argparse
 import sys
 import cv2
 import numpy as np
@@ -53,9 +54,9 @@ def get_image_inputs(path):
 	print('image file')
 	return image_files_list
 
-path = '/home/aiswarya/data_test'
-image_files_list = get_image_inputs(path)
-print(image_files_list)
+#path = '/home/aiswarya/data_test'
+#image_files_list = get_image_inputs(path)
+#print(image_files_list)
 ## Util Functions
 
 def make_dict(contour_points):
@@ -1092,8 +1093,8 @@ def contour_raw(image_files_list):
     
   return contours_list, areas_list, peris_list,final_subcontours, final_areas, final_peris, image_stack,images_predContours_dict,concave_points_dict,contour_splitlines_dict,contour_splitlines_img_dict,angles__contours_image_dict,concaves__contours_image_dict,img_cv2_hull_dict,img_cv2_contours_dict,concavePT_angle_image_dict
 
-print(image_files_list)
-contours_list, areas_list, peris_list,final_subcontours, final_areas, final_peris, image_stack,images_predContours_dict,concave_points_dict,contour_splitlines_dict,contour_splitlines_img_dict,angles__contours_image_dict,concaves__contours_image_dict,img_cv2_hull_dict,img_cv2_contours_dict,concavePT_angle_image_dict = contour_raw(image_files_list)
+#print(image_files_list)
+#contours_list, areas_list, peris_list,final_subcontours, final_areas, final_peris, image_stack,images_predContours_dict,concave_points_dict,contour_splitlines_dict,contour_splitlines_img_dict,angles__contours_image_dict,concaves__contours_image_dict,img_cv2_hull_dict,img_cv2_contours_dict,concavePT_angle_image_dict = contour_raw(image_files_list)
 # contours_list, areas_list, peris_list,final_subcontours, final_areas, final_peris, image_stack,images_predContours_dict,concave_points_dict,contour_splitlines_dict,contour_splitlines_img_dict,angles__contours_image_dict,concaves__contours_image_dict,img_cv2_hull_dict,img_cv2_contours_dict,concavePT_angle_image_dict = contour_raw([image_files_list[200]])
 
 """## **Target**"""
@@ -1343,8 +1344,9 @@ def find_accuracy():
 def visualize_contours(image_files_list,images_predContours_dict, index, savepath):
 	imgkey = image_files_list[index]
 	print(imgkey)
-	fil = img_cv2_contours_dict[imgkey]
+	#fil = img_cv2_contours_dict[imgkey]
 	file_ = imgkey.split('/')[-1]
+	"""
 	concaves = concave_points_dict[image_files_list[index]]
 	concaves_list = []
 	# print(concaves)
@@ -1378,9 +1380,9 @@ def visualize_contours(image_files_list,images_predContours_dict, index, savepat
 		req_list_.append(np.array([ele]))
 
 	print('Number of concave points in image', len(req_list_))
-
+	"""
 	image = cv2.imread(imgkey)
-	cv2.imshow('actual image', image)
+	#cv2.imshow('actual image', image)
 	cont_pred = images_predContours_dict[file_]
 	print('Number of Predicted Contours in Image', len(cont_pred))
 	cv2.drawContours(image,cont_pred,-1,(0,0,255),2)
@@ -1388,9 +1390,9 @@ def visualize_contours(image_files_list,images_predContours_dict, index, savepat
 	cv2.imwrite(savepath, image)
 
 
-for i in range(len(image_files_list)):
-	savepath = path + '/' + 'result' + str(i) +'.png'
-	visualize_contours(image_files_list,images_predContours_dict, i, savepath)
+#for i in range(len(image_files_list)):
+#	savepath = path + '/' + 'result' + str(i) +'.png'
+#	visualize_contours(image_files_list,images_predContours_dict, i, savepath)
 	
 
 """## **Visualize Each Contour**"""
@@ -1562,7 +1564,30 @@ def clustering_and_analysis(contours_list,areas_list, peris_list, image_stack):
 	cluster_analysis(feature1_l1,feature1_l2, feature1_l3,feature2_l1, feature2_l2, feature2_l3)
 	
 
-clustering_and_analysis(contours_list,areas_list, peris_list, image_stack)
+#clustering_and_analysis(contours_list,areas_list, peris_list, image_stack)
 
+
+def main(args):
+	
+	print("RUNNING !!")
+	path = args.path
+	image_files_list = get_image_inputs(path)
+	
+	contours_list, areas_list, peris_list,final_subcontours, final_areas, final_peris, image_stack,images_predContours_dict,concave_points_dict,contour_splitlines_dict,contour_splitlines_img_dict,angles__contours_image_dict,concaves__contours_image_dict,img_cv2_hull_dict,img_cv2_contours_dict,concavePT_angle_image_dict = contour_raw(image_files_list)
+	
+	for i in range(len(image_files_list)):
+		savepath = path + '/' + 'result' + str(i) +'.png'
+		visualize_contours(image_files_list,images_predContours_dict, i, savepath)
+	
+	
+if __name__ == "__main__":
+	
+	parser = argparse.ArgumentParser(description='Nissl Cell Segmentation')
+	parser.add_argument('--path', default = '\home', type = str, help = 'path to the input files')
+	
+	args = parser.parse_args()
+	main(args)
+	
+	
 	
 
