@@ -962,7 +962,7 @@ def contour_raw(image_files_list):
     #_,thresh = cv2.threshold(img,80,255,cv2.THRESH_BINARY)	#Assumes the cells are darker than background
     image_stack.append(img)
       
-    contours, hierarchy =  cv2.findContours(thresh,cv2.RETR_LIST,cv2.CHAIN_APPROX_SIMPLE)
+    _,contours, hierarchy =  cv2.findContours(thresh,cv2.RETR_LIST,cv2.CHAIN_APPROX_SIMPLE)
     # print('num of contours cv2', len(contours))
     contours, areas, peris = find_area_perimeter_hist(contours)
     img_cv2_contours_dict[image_files_list[im]] = contours
@@ -1385,7 +1385,7 @@ def visualize_contours(image_files_list,images_predContours_dict, index, savepat
 	#cv2.imshow('actual image', image)
 	cont_pred = images_predContours_dict[file_]
 	print('Number of Predicted Contours in Image', len(cont_pred))
-	cv2.drawContours(image,cont_pred,-1,(0,0,255),2)
+	cv2.drawContours(image,cont_pred,-1,(0,0,255),1)
 	#cv2.imshow('contours', image)
 	cv2.imwrite(savepath, image)
 
