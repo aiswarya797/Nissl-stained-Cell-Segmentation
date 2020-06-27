@@ -13,6 +13,7 @@
 
 ## Dependencies
 
+import json
 import argparse
 import sys
 import cv2
@@ -198,6 +199,10 @@ def find_mid_pt(pt1, pt2):
   return (mid_pt_x, mid_pt_y)
 
 def euclidean(x1,y1,x2,y2):
+	# print('x1', x1)
+	# print('y1', y1)
+	# print('x2', x2)
+	# print('y2', y2)
 	return np.sqrt(np.add(np.square(np.subtract(x1,x2)),np.square(np.subtract(y1,y2))))
 	
 ## nearest_pair_point function finds the nearest point to coord1 from a set of points
@@ -1341,11 +1346,8 @@ def find_accuracy():
 
 """## **VISUALIZATION OF IMAGE WITH CONTOURS**"""
 
-def visualize_contours(image_files_list,images_predContours_dict, index, savepath):
-	imgkey = image_files_list[index]
-	print(imgkey)
-	#fil = img_cv2_contours_dict[imgkey]
-	file_ = imgkey.split('/')[-1]
+def visualize_contours(imgkey,images_predContours_dict, savepath):
+	
 	"""
 	concaves = concave_points_dict[image_files_list[index]]
 	concaves_list = []
@@ -1382,6 +1384,7 @@ def visualize_contours(image_files_list,images_predContours_dict, index, savepat
 	print('Number of concave points in image', len(req_list_))
 	"""
 	image = cv2.imread(imgkey)
+	file_ = imgkey.split('/')[-1]
 	#cv2.imshow('actual image', image)
 	cont_pred = images_predContours_dict[file_]
 	print('Number of Predicted Contours in Image', len(cont_pred))
@@ -1389,10 +1392,33 @@ def visualize_contours(image_files_list,images_predContours_dict, index, savepat
 	#cv2.imshow('contours', image)
 	cv2.imwrite(savepath, image)
 
+def draw_actual_contours(imgkey,image_contour_dict, file_, savepath):
+	image = cv2.imread(imgkey)
+	cont_real = image_contour_dict[file_]
+	print('Number of Actual Contours in Image', len(cont_real))
+	cv2.drawContours(image,cont_real,-1,(0,0,255),1)
+	#cv2.imshow('contours', image)
+	cv2.imwrite(savepath, image)
+
 
 #for i in range(len(image_files_list)):
 #	savepath = path + '/' + 'result' + str(i) +'.png'
 #	visualize_contours(image_files_list,images_predContours_dict, i, savepath)
+
+def get_contours_pred(imgkey, images_predContours_dict):
+	file_ = imgkey.split('/')[-1]	
+	cont_pred = images_predContours_dict[file_]
+	
+	return cont_pred
+
+def get_contours_real(imgkey, image_contour_dict, file_):
+	image = cv2.imread(imgkey)
+	cont_real = image_contour_dict[file_]
+	
+	return cont_real
+
+def cont_to_dict(contours):
+	dictionary = {}
 	
 
 """## **Visualize Each Contour**"""
@@ -1566,25 +1592,200 @@ def clustering_and_analysis(contours_list,areas_list, peris_list, image_stack):
 
 #clustering_and_analysis(contours_list,areas_list, peris_list, image_stack)
 
+#array([[[116,   1]], [[118,   1]], [[121,   3]], [[121,   0]]]   ->>> Contour format
+## Target Inputs
+def dict_to_array(list_of_dicts):
+  # {'x': 72, 'y': 11} to [72,11]
+	list_of_arrs = []
+	for dictionary in list_of_dicts:
+		x = dictionary['x']
+		y = dictionary['y']
+		list_of_arrs.append([[x, y]])  #IMPORTANT -> This is the form required by cv2.drawContour()
+
+	return list_of_arrs
+
+def load_contour_from_json(jsonPath):
+	f = open(jsonPath)
+	img_annots_list = json.load(f)
+
+	target_contour_list = []
+	target_labels_list = []
+	areas_list = []
+	peris_list = []
+	image_contour_dict = {}
+
+	for i in range(len(img_annots_list)):
+		d = img_annots_list[i]
+		file_ = d["External ID"]
+		file_ = file_.split('/')[-1]
+		count = 0
+
+		contours_image = []
+		try:
+			cell1 = img_annots_list[i]["Label"]["cell1"]
+			
+			for p in range(len(cell1)):
+				cont = cell1[p]["geometry"]
+				contours_image.append(np.array(dict_to_array(cont)))
+				target_contour_list.append(dict_to_array(cont))
+				target_labels_list.append(0)
+				area = cv2.contourArea(np.array(dict_to_array(cont)))
+				peri = cv2.arcLength(np.array(dict_to_array(cont)), True)
+				areas_list.append(area)
+				peris_list.append(peri)
+
+		except:
+			#pass
+			count = count+1
+		try:
+			cell2 = img_annots_list[i]["Label"]["cell2"]
+			for q in range(len(cell2)):
+				cont = cell2[q]["geometry"]
+				contours_image.append(np.array(dict_to_array(cont)))
+				target_contour_list.append(dict_to_array(cont))
+				target_labels_list.append(1)
+				area = cv2.contourArea(np.array(dict_to_array(cont)))
+				peri = cv2.arcLength(np.array(dict_to_array(cont)), True)
+				areas_list.append(area)
+				peris_list.append(peri)
+
+		except:
+			#pass
+			count = count+1
+
+		try:
+			cell3 = img_annots_list[i]["Label"]["cell3"]
+			for r in range(len(cell3)):
+				cont = cell3[r]["geometry"]
+				contours_image.append(np.array(dict_to_array(cont)))
+				target_contour_list.append(dict_to_array(cont))
+				target_labels_list.append(2)
+				area = cv2.contourArea(np.array(dict_to_array(cont)))
+				peri = cv2.arcLength(np.array(dict_to_array(cont)), True)
+				areas_list.append(area)
+				peris_list.append(peri)
+
+		except:
+			#pass
+			count = count+1
+
+		image_contour_dict[file_] = contours_image
+		print(len(target_contour_list))
+		print(len(areas_list))
+		print(len(peris_list))
+		#target_feature_dict=get_feature_dict_list(target_contour_list, areas_list, peris_list)
+
+		#return target_contour_list, target_labels_list, areas_list, peris_list, target_feature_dict, image_contour_dict
+	return image_contour_dict
+
+def get_centers_list(contours):
+	rad, centers = get_rad_cen(contours)	
+	return centers
+
+def one_one_correspondence(array1, array2):
+	array1 = np.array(get_centers_list(array1))
+	array2 = np.array(get_centers_list(array2))
+	print('ar1', array1)
+	print('ar2', array2)
+
+	false_negative = 0
+	true_positive = 0
+	true_negative = 0
+	false_positve = 0
+	i = 0
+	while(i < len(array2)):
+		b = True
+		j = 0
+		while(j < len(array1) and b):
+			ele1 = array1[j]
+			ele2 = array2[i]
+			dis = euclidean(ele1[0],ele1[1], ele2[0], ele2[1])
+			if dis<10:
+				true_positive+=1
+				array1 = np.delete(array1, j, axis=0)
+				array2 = np.delete(array2, i, axis=0)
+				b = False
+
+			else:
+				j+=1
+
+
+		if b:
+			true_negative+=1
+			i+=1
+
+
+	false_positve = len(array1) 
+
+	return true_positive, false_positve, true_negative, false_negative
+	
+
+def f1_score_finder(array1, array2):
+    true_positive, false_positive, true_negative, false_negative = one_one_correspondence(array1, array2)
+    print('true_positive', true_positive)
+    print('true_negative', true_negative)
+    print('false_positve', false_positive)
+    print('false_negative', false_negative)
+
+    precision = true_positive/(true_positive+false_positive)
+    if (true_positive+false_negative)==0:
+        print('no recall')
+        print('No F1')
+        F1Score = 'Not defined'
+        recall = 'Not defined'
+    else:
+        recall = true_positive/(true_positive+false_negative)
+        F1Score = 2*precision*recall/(precision+recall)
+
+    return precision, recall, F1Score
+
 
 def main(args):
 	
 	print("RUNNING !!")
-	path = args.path
-	image_files_list = get_image_inputs(path)
+	input_path = args.inputpath
+	output_path = args.outputpath
+	targetPresent = args.targetPresent
+	json_path = args.jsonPath	#'/media/aiswarya/New Volume/My_works/CCBR-IITM-Thesis/data.json'
+	image_files_list = get_image_inputs(input_path)
 	
 	contours_list, areas_list, peris_list,final_subcontours, final_areas, final_peris, image_stack,images_predContours_dict,concave_points_dict,contour_splitlines_dict,contour_splitlines_img_dict,angles__contours_image_dict,concaves__contours_image_dict,img_cv2_hull_dict,img_cv2_contours_dict,concavePT_angle_image_dict = contour_raw(image_files_list)
-	
+	dictionary = {}
 	for i in range(len(image_files_list)):
-		savepath = path + '/' + 'result' + str(i) +'.png'
-		visualize_contours(image_files_list,images_predContours_dict, i, savepath)
+		imgkey = image_files_list[i]
+		print(imgkey)
+		#fil = img_cv2_contours_dict[imgkey]
+		file_ = imgkey.split('/')[-1]
+		dict_key = file_
+		num = file_.split('.')[0][-1]
+		savepath = output_path + '/' + 'result' + str(num) +'.png'
+		visualize_contours(imgkey,images_predContours_dict, savepath)
+		#dict_val = cont_to_dict(cont_pred)
+
+		#dictionary[dict_key] = dict_val
+	
+	if targetPresent:
+		image_contour_dict = load_contour_from_json(json_path)
+		cont_pred = get_contours_pred(imgkey, images_predContours_dict)
+		file__ = list(image_contour_dict.keys())[0]
+		cont_real = get_contours_real(imgkey, image_contour_dict, file__)
+		savepath_ = output_path + '/' + 'real' + str(num) +'.png'
+		draw_actual_contours(imgkey, image_contour_dict, file__, savepath_)
+
+		precision, recall, F1_score = f1_score_finder(cont_pred, cont_real)
+		print('precision', precision)
+		print('recall', recall)
+		print('F1', F1_score)
 	
 	
 if __name__ == "__main__":
 	
 	parser = argparse.ArgumentParser(description='Nissl Cell Segmentation')
-	parser.add_argument('--path', default = '\home', type = str, help = 'path to the input files')
-	
+	parser.add_argument('--inputpath', default = '\home', type = str, help = 'path to the input files')
+	parser.add_argument('--outputpath', default = '\home', type = str, help = 'path to the output files')
+	parser.add_argument('--targetPresent', default = False, type = bool, help = 'If the target cell segmentation is available, then this variable is set to true')
+	parser.add_argument('--jsonPath', default = '\home', type = str, help = 'Given contours in json format, apply on image')
+
 	args = parser.parse_args()
 	main(args)
 	
