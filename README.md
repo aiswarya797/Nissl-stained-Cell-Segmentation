@@ -2,6 +2,7 @@
 This repository contains all the code written during my thesis at CCBR, IIT Madras. 
 
 ## Command to run the code from command line :
-    python cell_segment_basic.py --path '/home/aiswarya/data_test'
+    python cell_segment_basic.py --inputpath '/home/aiswarya/data_test/input' --outputpath '/home/aiswarya/data_test/output' --targetPresent True --jsonPath '/home/aiswarya/CCBR-IITM-Thesis/data.json'
 
-Here. --path contains the path to the input files. Segmented output images (a new copy of the images) are saved back to same folder.
+Here. --inputpath contains the path to the input files, --outputpath contains path to output files, wherein the segmented output images are saved, --targetPresent is a boolean, which states if target contours are available (for example, if human annotated contours are available in json format, this variable is set to True)
+--jsonPath is the path to the json file, if targetPresent is true. Otherwise, this variable can be neglected.
