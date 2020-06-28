@@ -1804,6 +1804,7 @@ def main(args):
 	output_path = args.outputpath
 	targetPresent = args.targetPresent
 	json_Inpath = args.jsonInputPath	#'/media/aiswarya/New Volume/My_works/CCBR-IITM-Thesis/data.json'
+	saveJson = args.saveJson
 	json_Outpath = args.jsonOutputPath 
 	image_files_list = get_image_inputs(input_path)
 	
@@ -1825,8 +1826,9 @@ def main(args):
 		visualize_contours(imgkey,images_predContours_dict, savepath)
 		dictionary_labels.append(1)
 
-	classes = 1
-	store_contours_to_json(dictionary_keys, dictionary_values, dictionary_labels, classes, json_Outpath)
+	if saveJson:
+		classes = 1
+		store_contours_to_json(dictionary_keys, dictionary_values, dictionary_labels, classes, json_Outpath)
 			
 	if targetPresent:
 		image_contour_dict = load_contour_from_json(json_Inpath)
@@ -1849,6 +1851,7 @@ if __name__ == "__main__":
 	parser.add_argument('--outputpath', default = '\home', type = str, help = 'path to the output files')
 	parser.add_argument('--targetPresent', default = False, type = bool, help = 'If the target cell segmentation is available, then this variable is set to true')
 	parser.add_argument('--jsonInputPath', default = '\home', type = str, help = 'Given contours in json format, apply on image')
+	parser.add_argument('--saveJson', default = False, type = bool, help = 'If the predicted contours need to be saved, then this variable is set to true')
 	parser.add_argument('--jsonOutputPath', default = '\home', type = str, help = 'Path into which contours are stored in json format')
 
 	args = parser.parse_args()
