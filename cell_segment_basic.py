@@ -14,6 +14,8 @@
 ## Dependencies
 
 import json
+import ujson
+#from numpyencoder import NumpyEncoder
 import argparse
 import sys
 import cv2
@@ -1594,15 +1596,24 @@ def clustering_and_analysis(contours_list,areas_list, peris_list, image_stack):
 
 #array([[[116,   1]], [[118,   1]], [[121,   3]], [[121,   0]]]   ->>> Contour format
 ## Target Inputs
+
 def dict_to_array(list_of_dicts):
   # {'x': 72, 'y': 11} to [72,11]
 	list_of_arrs = []
 	for dictionary in list_of_dicts:
-		x = dictionary['x']
-		y = dictionary['y']
+		x = dictionary["x"]
+		y = dictionary["y"]
 		list_of_arrs.append([[x, y]])  #IMPORTANT -> This is the form required by cv2.drawContour()
 
 	return list_of_arrs
+
+def array_to_dict(arr):
+	# [72,11] to {'x' : 72, 'y':11}
+	dictionary = {}
+	dictionary["x"] = arr[0]
+	dictionary["y"] = arr[1]
+
+	return dictionary
 
 def load_contour_from_json(jsonPath):
 	f = open(jsonPath)
@@ -1678,6 +1689,52 @@ def load_contour_from_json(jsonPath):
 		#return target_contour_list, target_labels_list, areas_list, peris_list, target_feature_dict, image_contour_dict
 	return image_contour_dict
 
+def get_geometry(contour):
+
+	geometry = []
+	for i in range(len(contour)):
+		ele = contour[i][0]
+		ele_dict = array_to_dict(ele)
+		geometry.append(ele_dict)
+
+	return geometry
+
+def store_contours_to_json(dictionary_keys, dictionary_values, dictionary_labels, classes, json_path):
+	
+	#dictionary labels should array with only integers starting from 1 and preferably consecutive integers
+	dictionary = {}
+	for i in range(len(dictionary_keys)):
+		Label = {}	
+		for i in range(classes):
+			Label["cell"+str(i+1)] = []
+		key = dictionary_keys[i]
+		dictionary["External ID"] = key
+		contours = dictionary_values[i]
+		for j in range(len(contours)):
+			geo_dict = {}
+			cont = contours[j]
+			geo = get_geometry(cont)
+			geo_dict["geometry"] = geo
+
+			label = dictionary_labels[i]
+			Label["cell"+str(label)].append(geo_dict)
+
+		dictionary["Label"] = Label
+
+	#d = np.array([dictionary], dtype = int).unique().tolist()
+	d = str([dictionary])
+	d = d.replace("\'", "\"")
+
+# Writing to sample.json 
+	with open(json_path, 'w') as outfile:
+	# 	ujson.dump([dictionary], outfile)
+		# Serializing json  
+		#json_object = json.dumps([dictionary]) 
+		#outfile.write(json_object) 
+		outfile.write(d)
+
+	
+
 def get_centers_list(contours):
 	rad, centers = get_rad_cen(contours)	
 	return centers
@@ -1688,7 +1745,7 @@ def one_one_correspondence(array1, array2):
 	print('ar1', array1)
 	print('ar2', array2)
 
-	false_negative = 0
+	false_negative = 5
 	true_positive = 0
 	true_negative = 0
 	false_positve = 0
@@ -1700,7 +1757,7 @@ def one_one_correspondence(array1, array2):
 			ele1 = array1[j]
 			ele2 = array2[i]
 			dis = euclidean(ele1[0],ele1[1], ele2[0], ele2[1])
-			if dis<10:
+			if dis<5:
 				true_positive+=1
 				array1 = np.delete(array1, j, axis=0)
 				array2 = np.delete(array2, i, axis=0)
@@ -1746,26 +1803,33 @@ def main(args):
 	input_path = args.inputpath
 	output_path = args.outputpath
 	targetPresent = args.targetPresent
-	json_path = args.jsonPath	#'/media/aiswarya/New Volume/My_works/CCBR-IITM-Thesis/data.json'
+	json_Inpath = args.jsonInputPath	#'/media/aiswarya/New Volume/My_works/CCBR-IITM-Thesis/data.json'
+	json_Outpath = args.jsonOutputPath 
 	image_files_list = get_image_inputs(input_path)
 	
 	contours_list, areas_list, peris_list,final_subcontours, final_areas, final_peris, image_stack,images_predContours_dict,concave_points_dict,contour_splitlines_dict,contour_splitlines_img_dict,angles__contours_image_dict,concaves__contours_image_dict,img_cv2_hull_dict,img_cv2_contours_dict,concavePT_angle_image_dict = contour_raw(image_files_list)
-	dictionary = {}
+	dictionary_keys = []
+	dictionary_values = []
+	dictionary_labels = []
 	for i in range(len(image_files_list)):
 		imgkey = image_files_list[i]
 		print(imgkey)
 		#fil = img_cv2_contours_dict[imgkey]
 		file_ = imgkey.split('/')[-1]
 		dict_key = file_
+		dictionary_keys.append(dict_key)
+		cont_pred = get_contours_pred(imgkey, images_predContours_dict)
+		dictionary_values.append(cont_pred)
 		num = file_.split('.')[0][-1]
 		savepath = output_path + '/' + 'result' + str(num) +'.png'
 		visualize_contours(imgkey,images_predContours_dict, savepath)
-		#dict_val = cont_to_dict(cont_pred)
+		dictionary_labels.append(1)
 
-		#dictionary[dict_key] = dict_val
-	
+	classes = 1
+	store_contours_to_json(dictionary_keys, dictionary_values, dictionary_labels, classes, json_Outpath)
+			
 	if targetPresent:
-		image_contour_dict = load_contour_from_json(json_path)
+		image_contour_dict = load_contour_from_json(json_Inpath)
 		cont_pred = get_contours_pred(imgkey, images_predContours_dict)
 		file__ = list(image_contour_dict.keys())[0]
 		cont_real = get_contours_real(imgkey, image_contour_dict, file__)
@@ -1784,7 +1848,8 @@ if __name__ == "__main__":
 	parser.add_argument('--inputpath', default = '\home', type = str, help = 'path to the input files')
 	parser.add_argument('--outputpath', default = '\home', type = str, help = 'path to the output files')
 	parser.add_argument('--targetPresent', default = False, type = bool, help = 'If the target cell segmentation is available, then this variable is set to true')
-	parser.add_argument('--jsonPath', default = '\home', type = str, help = 'Given contours in json format, apply on image')
+	parser.add_argument('--jsonInputPath', default = '\home', type = str, help = 'Given contours in json format, apply on image')
+	parser.add_argument('--jsonOutputPath', default = '\home', type = str, help = 'Path into which contours are stored in json format')
 
 	args = parser.parse_args()
 	main(args)
