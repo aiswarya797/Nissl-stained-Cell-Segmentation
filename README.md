@@ -6,3 +6,6 @@ This repository contains all the code written during my thesis at CCBR, IIT Madr
 
 Here. --inputpath contains the path to the input files, --outputpath contains path to output files, wherein the segmented output images are saved, --targetPresent is a boolean, which states if target contours are available (for example, if human annotated contours are available in json format, this variable is set to True)
 --jsonInputPath is the path to the json file, if targetPresent is true. Otherwise, this variable can be neglected.  --jsonOutputPath is the path to the folder where in the predicted contours shall be saved in json format, if saveJson is True. Otherwise this variable is also neglected
+
+## cell_segment_basic.ipynb is a colab file
+This file can be uploaded to a colaboratory file on Google Drive. Make sure that the folders 'Input_Images', 'input_json', 'output_images' and 'output_json' are present (as present in JsonOutputs). These file paths must be provided inside the 'main' function.
